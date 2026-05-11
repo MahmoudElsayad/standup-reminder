@@ -9,7 +9,6 @@ final class ReminderEngine: ObservableObject {
     @Published var intervalMinutes: Int = 30
     @Published var exerciseDurationMinutes: Int = 5
     @Published var selectedExercises: [Exercise] = []
-    @Published var showReminderWindow: Bool = false
 
     // Preferences
     @Published var enabledCategories: Set<ExerciseCategory> = Set(ExerciseCategory.allCases)

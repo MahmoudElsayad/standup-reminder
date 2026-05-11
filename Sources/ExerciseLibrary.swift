@@ -32,7 +32,7 @@ enum ExerciseCategory: String, Codable, CaseIterable {
     }
 }
 
-struct Exercise: Codable, Equatable, Hashable {
+struct Exercise: Equatable, Hashable {
     let name: String
     let category: ExerciseCategory
     let instructions: String
@@ -40,7 +40,7 @@ struct Exercise: Codable, Equatable, Hashable {
     let difficulty: Difficulty
     let contraindications: [String]
 
-    enum Difficulty: String, Codable, CaseIterable, Hashable {
+    enum Difficulty: String, CaseIterable, Hashable {
         case easy = "Easy"
         case moderate = "Moderate"
         case challenging = "Challenging"
@@ -58,25 +58,6 @@ struct ActivityLogEntry: Codable, Identifiable {
     let completed: Bool
     let skipped: Bool
     let notes: String?
-}
-
-// MARK: - App Preferences
-
-struct AppPreferences: Codable {
-    var reminderIntervalMinutes: Int = 30
-    var exerciseDurationMinutes: Int = 5
-    var enabledCategories = Set(ExerciseCategory.allCases)
-    var enabledExercises: Set<String> = []
-    var weeklyGoal: Int = 20
-    var notificationSound: NotificationSound = .default
-    var launchAtLogin: Bool = false
-    var showMedicalInfo: Bool = true
-
-    enum NotificationSound: String, Codable, CaseIterable {
-        case `default` = "Default"
-        case gentle = "Gentle"
-        case firm = "Firm"
-    }
 }
 
 // MARK: - Medical Research Summary
@@ -175,14 +156,13 @@ enum ExerciseLibrary {
     ]
 
     static func exercise(named name: String) -> Exercise? { allExercises.first { $0.name == name } }
-    static func exercises(in category: ExerciseCategory) -> [Exercise] { allExercises.filter { $0.category == category } }
 
     static func selectExercises(durationMinutes: Int, enabledCategories: Set<ExerciseCategory>,
                                 disabledExercises: Set<String>, userContraindications: Set<String>) -> [Exercise] {
         let available = allExercises.filter { ex in
-            enabledCategories.contains(ex.category) &&
-            !disabledExercises.contains(ex.name) &&
-            ex.contraindications.allSatisfy { !userContraindications.contains($0) }
+            guard enabledCategories.contains(ex.category), !disabledExercises.contains(ex.name) else { return false }
+            for c in ex.contraindications { if userContraindications.contains(c) { return false } }
+            return true
         }
         guard !available.isEmpty else {
             return [exercise(named: "March in Place (Gentle)")!, exercise(named: "Stand & Reach Up")!]

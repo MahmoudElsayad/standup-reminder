@@ -17,7 +17,8 @@ SWIFT_FLAGS    := -sdk $(SDK_PATH) \
                   -Xlinker -rpath -Xlinker /usr/lib/swift \
                   -target arm64-apple-macosx14.0 \
                   -parse-as-library \
-                  -Osize
+                  -Osize \
+                  -wmo
 
 .PHONY: all build clean run install launchd-install launchd-uninstall help
 
