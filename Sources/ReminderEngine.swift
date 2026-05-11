@@ -35,16 +35,6 @@ final class ReminderEngine: ObservableObject {
         return formatter.string(from: next)
     }
 
-    var completedThisWeek: Int {
-        Task { await ActivityLogger.shared.completedThisWeek() }
-        return 0  // Sync fallback
-    }
-
-    var streakDays: Int {
-        Task { await ActivityLogger.shared.streakDays() }
-        return 0
-    }
-
     // MARK: - Timer Control
 
     func start() {

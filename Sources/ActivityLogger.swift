@@ -60,13 +60,7 @@ actor ActivityLogger {
 
     // MARK: - Querying
 
-    func entriesForToday() -> [ActivityLogEntry] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        return entries.filter { calendar.isDate($0.timestamp, inSameDayAs: today) }
-    }
-
-    func entriesForWeek() -> [ActivityLogEntry] {
+    private func entriesForWeek() -> [ActivityLogEntry] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         guard let weekAgo = calendar.date(byAdding: .day, value: -7, to: today) else {
@@ -77,28 +71,6 @@ actor ActivityLogger {
 
     func completedThisWeek() -> Int {
         entriesForWeek().filter(\.completed).count
-    }
-
-    func completionRate(days: Int = 7) -> Double {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        guard let startDate = calendar.date(byAdding: .day, value: -days, to: today) else {
-            return 0
-        }
-        let periodEntries = entries.filter { $0.timestamp >= startDate }
-        let total = periodEntries.count
-        guard total > 0 else { return 0 }
-        return Double(periodEntries.filter(\.completed).count) / Double(total)
-    }
-
-    func favoriteExercises(limit: Int = 5) -> [(name: String, count: Int)] {
-        let completed = entries.filter(\.completed)
-        let grouped = Dictionary(grouping: completed, by: \.exerciseName)
-        return grouped
-            .map { ($0.key, $0.value.count) }
-            .sorted { $0.1 > $1.1 }
-            .prefix(limit)
-            .map { ($0.0, $0.1) }
     }
 
     func streakDays() -> Int {

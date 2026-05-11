@@ -43,7 +43,6 @@ struct Exercise: Equatable, Hashable {
     enum Difficulty: String, CaseIterable, Hashable {
         case easy = "Easy"
         case moderate = "Moderate"
-        case challenging = "Challenging"
     }
 }
 
