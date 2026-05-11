@@ -9,15 +9,6 @@ struct SettingsView: View {
         case exercises = "Exercises"
         case research = "Research"
         case about = "About"
-
-        var icon: String {
-            switch self {
-            case .intervals: return "timer"
-            case .exercises: return "figure.strengthtraining.traditional"
-            case .research: return "cross.case"
-            case .about: return "info.circle"
-            }
-        }
     }
 
     var body: some View {
@@ -133,51 +124,26 @@ struct SettingsView: View {
     }
 
     private var contraindicationGrid: some View {
-        let contraindications = [
-            ("knee_injury", "Knee issues"),
-            ("hip_injury", "Hip issues"),
-            ("back_injury_acute", "Back issues"),
-            ("shoulder_injury", "Shoulder issues"),
-            ("shoulder_injury_severe", "Shoulder (severe)"),
-            ("wrist_injury", "Wrist issues"),
-            ("ankle_injury", "Ankle issues"),
-            ("neck_injury", "Neck issues"),
-            ("balance_issues", "Balance concerns"),
-            ("hamstring_injury", "Hamstring tightness"),
-        ]
-
-        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 4) {
-            ForEach(contraindications, id: \.0) { (key, label) in
-                Toggle(label, isOn: contraindicationBinding(for: key))
-                    .font(.caption)
-            }
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 4) {
+            ContraToggle(label: "Knee issues", key: "knee_injury", engine: reminderEngine)
+            ContraToggle(label: "Hip issues", key: "hip_injury", engine: reminderEngine)
+            ContraToggle(label: "Back issues", key: "back_injury_acute", engine: reminderEngine)
+            ContraToggle(label: "Shoulder issues", key: "shoulder_injury", engine: reminderEngine)
+            ContraToggle(label: "Shoulder (severe)", key: "shoulder_injury_severe", engine: reminderEngine)
+            ContraToggle(label: "Wrist issues", key: "wrist_injury", engine: reminderEngine)
+            ContraToggle(label: "Ankle issues", key: "ankle_injury", engine: reminderEngine)
+            ContraToggle(label: "Neck issues", key: "neck_injury", engine: reminderEngine)
+            ContraToggle(label: "Balance concerns", key: "balance_issues", engine: reminderEngine)
+            ContraToggle(label: "Hamstring tightness", key: "hamstring_injury", engine: reminderEngine)
         }
     }
 
     private func categoryBinding(for category: ExerciseCategory) -> Binding<Bool> {
-        Binding(
-            get: { reminderEngine.enabledCategories.contains(category) },
-            set: { enabled in
-                if enabled {
-                    reminderEngine.enabledCategories.insert(category)
-                } else {
-                    reminderEngine.enabledCategories.remove(category)
-                }
-            }
-        )
-    }
-
-    private func contraindicationBinding(for key: String) -> Binding<Bool> {
-        Binding(
-            get: { reminderEngine.userContraindications.contains(key) },
-            set: { enabled in
-                if enabled {
-                    reminderEngine.userContraindications.insert(key)
-                } else {
-                    reminderEngine.userContraindications.remove(key)
-                }
-            }
-        )
+        Binding(get: { reminderEngine.enabledCategories.contains(category) },
+                set: { enabled in
+                    if enabled { reminderEngine.enabledCategories.insert(category) }
+                    else { reminderEngine.enabledCategories.remove(category) }
+                })
     }
 
     // MARK: - Research Tab
@@ -251,8 +217,4 @@ struct SettingsView: View {
             Spacer()
         }
     }
-}
-
-#Preview {
-    SettingsView(reminderEngine: ReminderEngine())
 }

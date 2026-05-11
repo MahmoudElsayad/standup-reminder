@@ -1,280 +1,203 @@
 import Foundation
 
-/// Research-backed exercise library organized by category and ability level.
-/// Based on BREAK2 (Diaz 2025), SBAE Consensus (Yin/Li 2025), and related meta-analyses.
-enum ExerciseLibrary {
+// MARK: - Exercise Definition
 
-    // MARK: - Walking (Most evidence-backed category)
+enum ExerciseCategory: String, Codable, CaseIterable {
+    case walking = "Walking"
+    case standing = "Standing / Marching"
+    case stretching = "Stretching"
+    case bodyweight = "Bodyweight"
+    case chair = "Chair Exercises"
+    case breathing = "Breathing / Mindfulness"
 
-    static let walkInPlace: Exercise = Exercise(
-        name: "Walk in Place",
-        category: .walking,
-        instructions: "March in place, lifting knees to hip height. Swing arms naturally. Land softly on the balls of your feet.",
-        durationSeconds: 120,
-        difficulty: .easy,
-        contraindications: []
-    )
+    var icon: String {
+        switch self {
+        case .walking: return "figure.walk"
+        case .standing: return "figure.stand"
+        case .stretching: return "figure.flexibility"
+        case .bodyweight: return "figure.strengthtraining.traditional"
+        case .chair: return "chair.lounge"
+        case .breathing: return "lungs"
+        }
+    }
+    var description: String {
+        switch self {
+        case .walking: return "Light walking — the most studied and accessible break activity"
+        case .standing: return "Stand up, march in place, shift weight between legs"
+        case .stretching: return "Gentle stretches for neck, shoulders, back, and legs"
+        case .bodyweight: return "Pushups, squats, lunges, calf raises, wall sits"
+        case .chair: return "Seated exercises for those with mobility limitations"
+        case .breathing: return "Deep breathing and mindfulness to reduce stress"
+        }
+    }
+}
 
-    static let briskWalkAround: Exercise = Exercise(
-        name: "Brisk Walk Around",
-        category: .walking,
-        instructions: "Walk briskly around your space. Aim for 2-3 mph pace (brisk but can hold a conversation). Swing arms.",
-        durationSeconds: 180,
-        difficulty: .moderate,
-        contraindications: []
-    )
+struct Exercise: Codable, Equatable, Hashable {
+    let name: String
+    let category: ExerciseCategory
+    let instructions: String
+    let durationSeconds: Int
+    let difficulty: Difficulty
+    let contraindications: [String]
 
-    static let highKnees: Exercise = Exercise(
-        name: "High Knees March",
-        category: .walking,
-        instructions: "March bringing knees up to waist level. Pump arms. Keep core engaged. Can be done at your own pace.",
-        durationSeconds: 60,
-        difficulty: .moderate,
-        contraindications: ["knee_injury"]
-    )
+    enum Difficulty: String, Codable, CaseIterable, Hashable {
+        case easy = "Easy"
+        case moderate = "Moderate"
+        case challenging = "Challenging"
+    }
+}
 
-    // MARK: - Standing / Marching
+// MARK: - Activity Log Entry
 
-    static let standAndStretchUp: Exercise = Exercise(
-        name: "Stand & Reach Up",
-        category: .standing,
-        instructions: "Stand up tall, reach both arms overhead, interlace fingers, and stretch upward. Hold for 5 seconds, release, repeat.",
-        durationSeconds: 60,
-        difficulty: .easy,
-        contraindications: []
-    )
+struct ActivityLogEntry: Codable, Identifiable {
+    var id: String { "\(timestamp.timeIntervalSince1970)-\(exerciseName)" }
+    let timestamp: Date
+    let exerciseName: String
+    let category: ExerciseCategory
+    let durationMinutes: Int
+    let completed: Bool
+    let skipped: Bool
+    let notes: String?
+}
 
-    static let marchInPlace: Exercise = Exercise(
-        name: "March in Place (Gentle)",
-        category: .standing,
-        instructions: "Stand tall and gently march in place. Lift feet just a few inches. Focus on posture — shoulders back, core engaged.",
-        durationSeconds: 120,
-        difficulty: .easy,
-        contraindications: []
-    )
+// MARK: - App Preferences
 
-    static let weightShiftTaps: Exercise = Exercise(
-        name: "Weight Shift & Side Taps",
-        category: .standing,
-        instructions: "Stand with feet hip-width. Shift weight to right, tap left foot out. Shift left, tap right. Add arm reaches for more movement.",
-        durationSeconds: 90,
-        difficulty: .easy,
-        contraindications: []
-    )
+struct AppPreferences: Codable {
+    var reminderIntervalMinutes: Int = 30
+    var exerciseDurationMinutes: Int = 5
+    var enabledCategories = Set(ExerciseCategory.allCases)
+    var enabledExercises: Set<String> = []
+    var weeklyGoal: Int = 20
+    var notificationSound: NotificationSound = .default
+    var launchAtLogin: Bool = false
+    var showMedicalInfo: Bool = true
 
-    // MARK: - Stretching
+    enum NotificationSound: String, Codable, CaseIterable {
+        case `default` = "Default"
+        case gentle = "Gentle"
+        case firm = "Firm"
+    }
+}
 
-    static let neckRolls: Exercise = Exercise(
-        name: "Neck & Shoulder Rolls",
-        category: .stretching,
-        instructions: "Slowly roll neck in half-circles (chin to chest, ear to shoulder). Roll shoulders forward 5×, backward 5×. Breathe deeply.",
-        durationSeconds: 60,
-        difficulty: .easy,
-        contraindications: ["neck_injury"]
-    )
+// MARK: - Medical Research Summary
 
-    static let spineTwist: Exercise = Exercise(
-        name: "Seated/Standing Spine Twist",
-        category: .stretching,
-        instructions: "Sit tall or stand. Place right hand on left knee, left hand behind you. Gently twist left. Hold 15 sec. Switch sides. Breathe.",
-        durationSeconds: 90,
-        difficulty: .easy,
-        contraindications: ["spine_injury"]
-    )
+struct ResearchCitation: Identifiable {
+    let id: String
+    let title: String
+    let finding: String
+    let source: String
+}
 
-    static let hamstringStretch: Exercise = Exercise(
-        name: "Hamstring Stretch",
-        category: .stretching,
-        instructions: "Stand and place one heel on a low surface (or floor). Hinge at hips, keep back straight. Feel stretch in back of thigh. Hold 20 sec each leg.",
-        durationSeconds: 120,
-        difficulty: .easy,
-        contraindications: ["hamstring_injury"]
-    )
-
-    static let chestDoorwayStretch: Exercise = Exercise(
-        name: "Chest & Doorway Stretch",
-        category: .stretching,
-        instructions: "Stand in a doorway. Place forearms on doorframe at shoulder height. Lean forward gently until you feel a stretch across your chest.",
-        durationSeconds: 60,
-        difficulty: .easy,
-        contraindications: ["shoulder_injury"]
-    )
-
-    // MARK: - Bodyweight
-
-    static let bodyweightSquats: Exercise = Exercise(
-        name: "Bodyweight Squats",
-        category: .bodyweight,
-        instructions: "Stand feet shoulder-width. Lower hips back and down as if sitting in a chair. Keep chest up, knees tracking over toes. Go as low as comfortable, then stand back up.",
-        durationSeconds: 120,
-        difficulty: .moderate,
-        contraindications: ["knee_injury", "hip_injury", "balance_issues"]
-    )
-
-    static let wallPushups: Exercise = Exercise(
-        name: "Wall Pushups",
-        category: .bodyweight,
-        instructions: "Stand arm's length from wall. Place palms on wall at shoulder height. Bend elbows, lean body toward wall. Push back. The most accessible pushup variant.",
-        durationSeconds: 90,
-        difficulty: .easy,
-        contraindications: ["wrist_injury"]
-    )
-
-    static let standingCalfRaises: Exercise = Exercise(
-        name: "Standing Calf Raises",
-        category: .bodyweight,
-        instructions: "Stand tall, rise up on balls of feet as high as comfortable. Hold 2 seconds at top. Lower slowly. Use a wall/chair for balance if needed.",
-        durationSeconds: 60,
-        difficulty: .easy,
-        contraindications: ["ankle_injury"]
-    )
-
-    static let lunges: Exercise = Exercise(
-        name: "Alternating Lunges",
-        category: .bodyweight,
-        instructions: "Step forward with right leg, lower hips until both knees are at 90°. Push back to start. Alternate legs. Use wall for support if needed.",
-        durationSeconds: 120,
-        difficulty: .moderate,
-        contraindications: ["knee_injury", "hip_injury", "balance_issues"]
-    )
-
-    static let gluteBridges: Exercise = Exercise(
-        name: "Glute Bridges",
-        category: .bodyweight,
-        instructions: "Lie on back, knees bent, feet flat on floor. Squeeze glutes and lift hips toward ceiling. Hold 2 sec at top. Lower with control. Do this on a mat or carpet.",
-        durationSeconds: 90,
-        difficulty: .easy,
-        contraindications: ["back_injury_acute"]
-    )
-
-    static let standingSideLegLifts: Exercise = Exercise(
-        name: "Standing Side Leg Lifts",
-        category: .bodyweight,
-        instructions: "Stand holding a wall/chair. Lift one leg out to the side, keeping it straight. Lower with control. Switch sides halfway through. Works hip abductors.",
-        durationSeconds: 90,
-        difficulty: .easy,
-        contraindications: ["hip_injury", "balance_issues"]
-    )
-
-    // MARK: - Chair Exercises (Accessible for mobility limitations)
-
-    static let seatedMarching: Exercise = Exercise(
-        name: "Seated Marching",
-        category: .chair,
-        instructions: "Sit tall in chair. Lift one knee toward chest, lower, switch. Like marching while seated. Keep back straight, engage core. Can increase pace for intensity.",
-        durationSeconds: 120,
-        difficulty: .easy,
-        contraindications: []
-    )
-
-    static let seatedLegExtensions: Exercise = Exercise(
-        name: "Seated Leg Extensions",
-        category: .chair,
-        instructions: "Sit tall, extend one leg straight out, hold 3 sec, lower slowly. Alternate legs. Squeeze quadriceps at the top. Works thigh muscles without standing.",
-        durationSeconds: 90,
-        difficulty: .easy,
-        contraindications: ["knee_injury"]
-    )
-
-    static let seatedArmCircles: Exercise = Exercise(
-        name: "Seated Arm Circles",
-        category: .chair,
-        instructions: "Extend arms out to sides at shoulder height. Make small circles forward for 30 sec, then backward for 30 sec. Keep shoulders relaxed, breathe steadily.",
-        durationSeconds: 60,
-        difficulty: .easy,
-        contraindications: ["shoulder_injury_severe"]
-    )
-
-    static let seatedTorsoTwist: Exercise = Exercise(
-        name: "Seated Torso Twist",
-        category: .chair,
-        instructions: "Sit sideways on chair (or twist torso). Place right hand on chair back, left on thigh. Gently twist right. Hold 15 sec. Switch sides. Engages core gently.",
-        durationSeconds: 60,
-        difficulty: .easy,
-        contraindications: ["spine_injury"]
-    )
-
-    // MARK: - Breathing / Mindfulness
-
-    static let boxBreathing: Exercise = Exercise(
-        name: "Box Breathing (4-4-4-4)",
-        category: .breathing,
-        instructions: "Inhale for 4 counts, hold for 4, exhale for 4, hold for 4. Repeat. Used by Navy SEALs for stress control. Lowers heart rate and blood pressure.",
-        durationSeconds: 120,
-        difficulty: .easy,
-        contraindications: []
-    )
-
-    static let standingDeepBreaths: Exercise = Exercise(
-        name: "Standing Deep Breaths",
-        category: .breathing,
-        instructions: "Stand tall. Inhale deeply through nose while raising arms overhead. Exhale slowly through mouth while lowering arms. Feel ribcage expand. 5-6 breaths per minute pace.",
-        durationSeconds: 90,
-        difficulty: .easy,
-        contraindications: []
-    )
-
-    // MARK: - Full Library
-
-    static let allExercises: [Exercise] = [
-        // Walking
-        walkInPlace, briskWalkAround, highKnees,
-        // Standing
-        standAndStretchUp, marchInPlace, weightShiftTaps,
-        // Stretching
-        neckRolls, spineTwist, hamstringStretch, chestDoorwayStretch,
-        // Bodyweight
-        bodyweightSquats, wallPushups, standingCalfRaises, lunges, gluteBridges, standingSideLegLifts,
-        // Chair
-        seatedMarching, seatedLegExtensions, seatedArmCircles, seatedTorsoTwist,
-        // Breathing
-        boxBreathing, standingDeepBreaths,
+enum MedicalResearch {
+    static let citations: [ResearchCitation] = [
+        ResearchCitation(id: "break2_2025", title: "BREAK2 Dose-Finding Trial",
+            finding: "Testing 25 frequency/duration combos (every 30-120 min, 1-10 min breaks). Highest dose: every 30 min for 10 min is the efficacy benchmark.",
+            source: "Diaz et al., BMC Public Health, 2025"),
+        ResearchCitation(id: "sbae_2025", title: "SBAE Consensus Statement",
+            finding: "Short Bouts of Accumulated Exercise (≤10 min, ≥2×/day, ≥30 min between) are SUPERIOR to single continuous exercise for glycemic control.",
+            source: "Yin, Li et al., J Sport Health Sci, 2025"),
+        ResearchCitation(id: "standing_meta", title: "Standing vs Walking Meta-Analysis",
+            finding: "Light walking significantly reduces postprandial glucose (d=-0.72) and insulin (d=-0.83). Standing also helps (d=-0.31). Walking > standing > sitting.",
+            source: "Buffey et al., Sports Medicine, 2022"),
+        ResearchCitation(id: "sleep_2025", title: "Sleep & Activity Breaks RCT",
+            finding: "Breaking up sitting with light walking does NOT harm sleep architecture. Safe to recommend without sleep disruption concerns.",
+            source: "Gupta et al., Scientific Reports, 2025"),
+        ResearchCitation(id: "cognition_2025", title: "Cognitive Benefits RCT",
+            finding: "Interrupting sitting every 30 min for 3.5 min of walking prevents cognitive decline and improves energy levels.",
+            source: "Kuang et al., Mental Health & Physical Activity, 2025"),
     ]
 
-    static func exercises(in category: ExerciseCategory) -> [Exercise] {
-        allExercises.filter { $0.category == category }
-    }
+    static let defaultRecommendation = """
+        Based on 2025 research (BREAK2 trial, SBAE statement):
+        • Break up sitting every 30 minutes
+        • Move for at least 3–5 minutes
+        • Light walking is the most evidence-backed activity
+        • Standing alone is better than sitting, walking is superior
+        • Even 1-minute breaks provide measurable benefit
+        • Every 30 min for 10 min is the efficacy benchmark
+        """
+}
 
-    static func exercises(for contraindication: String) -> [Exercise] {
-        allExercises.filter { !$0.contraindications.contains(contraindication) }
-    }
+// MARK: - Exercise Library
 
-    /// Get a randomized set of exercises based on user preferences and duration
-    static func selectExercises(
-        durationMinutes: Int,
-        enabledCategories: Set<ExerciseCategory>,
-        disabledExercises: Set<String>,
-        userContraindications: Set<String>
-    ) -> [Exercise] {
-        let available = allExercises.filter { exercise in
-            enabledCategories.contains(exercise.category) &&
-            !disabledExercises.contains(exercise.name) &&
-            !exercise.contraindications.contains(where: { userContraindications.contains($0) })
+enum ExerciseLibrary {
+    static let allExercises: [Exercise] = [
+        // Walking
+        Exercise(name: "Walk in Place", category: .walking, instructions: "March in place, lifting knees to hip height. Swing arms naturally.",
+                 durationSeconds: 120, difficulty: .easy, contraindications: []),
+        Exercise(name: "Brisk Walk Around", category: .walking, instructions: "Walk briskly around your space. Aim for 2-3 mph — brisk but conversational.",
+                 durationSeconds: 180, difficulty: .moderate, contraindications: []),
+        Exercise(name: "High Knees March", category: .walking, instructions: "March bringing knees to waist level. Pump arms, engage core.",
+                 durationSeconds: 60, difficulty: .moderate, contraindications: ["knee_injury"]),
+        // Standing
+        Exercise(name: "Stand & Reach Up", category: .standing, instructions: "Stand tall, reach arms overhead, stretch upward. Hold 5 sec, repeat.",
+                 durationSeconds: 60, difficulty: .easy, contraindications: []),
+        Exercise(name: "March in Place (Gentle)", category: .standing, instructions: "Stand tall, gently march. Focus on posture — shoulders back, core engaged.",
+                 durationSeconds: 120, difficulty: .easy, contraindications: []),
+        Exercise(name: "Weight Shift & Side Taps", category: .standing, instructions: "Shift weight side to side, tap opposite foot out. Add arm reaches.",
+                 durationSeconds: 90, difficulty: .easy, contraindications: []),
+        // Stretching
+        Exercise(name: "Neck & Shoulder Rolls", category: .stretching, instructions: "Slowly roll neck half-circles. Roll shoulders forward 5×, backward 5×.",
+                 durationSeconds: 60, difficulty: .easy, contraindications: ["neck_injury"]),
+        Exercise(name: "Spine Twist", category: .stretching, instructions: "Sit tall or stand. Gently twist torso left, hold 15 sec. Switch sides.",
+                 durationSeconds: 90, difficulty: .easy, contraindications: ["spine_injury"]),
+        Exercise(name: "Hamstring Stretch", category: .stretching, instructions: "Hinge at hips with straight back, stretch back of thigh. 20 sec per leg.",
+                 durationSeconds: 120, difficulty: .easy, contraindications: ["hamstring_injury"]),
+        Exercise(name: "Chest & Doorway Stretch", category: .stretching, instructions: "Place forearms on doorframe at shoulder height. Lean forward gently.",
+                 durationSeconds: 60, difficulty: .easy, contraindications: ["shoulder_injury"]),
+        // Bodyweight
+        Exercise(name: "Bodyweight Squats", category: .bodyweight, instructions: "Lower hips back and down like sitting in a chair. Keep chest up, stand back up.",
+                 durationSeconds: 120, difficulty: .moderate, contraindications: ["knee_injury", "hip_injury", "balance_issues"]),
+        Exercise(name: "Wall Pushups", category: .bodyweight, instructions: "Stand arm's length from wall. Palms at shoulder height. Lean in, push back.",
+                 durationSeconds: 90, difficulty: .easy, contraindications: ["wrist_injury"]),
+        Exercise(name: "Standing Calf Raises", category: .bodyweight, instructions: "Rise up on balls of feet, hold 2 sec, lower slowly. Use wall for balance.",
+                 durationSeconds: 60, difficulty: .easy, contraindications: ["ankle_injury"]),
+        Exercise(name: "Alternating Lunges", category: .bodyweight, instructions: "Step forward, lower until both knees at 90°. Push back. Alternate legs.",
+                 durationSeconds: 120, difficulty: .moderate, contraindications: ["knee_injury", "hip_injury", "balance_issues"]),
+        Exercise(name: "Glute Bridges", category: .bodyweight, instructions: "Lie on back, knees bent, feet flat. Squeeze glutes, lift hips. Hold 2 sec.",
+                 durationSeconds: 90, difficulty: .easy, contraindications: ["back_injury_acute"]),
+        Exercise(name: "Standing Side Leg Lifts", category: .bodyweight, instructions: "Hold wall/chair. Lift one leg to side, keep straight. Lower with control.",
+                 durationSeconds: 90, difficulty: .easy, contraindications: ["hip_injury", "balance_issues"]),
+        // Chair
+        Exercise(name: "Seated Marching", category: .chair, instructions: "Sit tall. Lift one knee toward chest, lower, switch. Like marching seated.",
+                 durationSeconds: 120, difficulty: .easy, contraindications: []),
+        Exercise(name: "Seated Leg Extensions", category: .chair, instructions: "Sit tall, extend one leg straight out, hold 3 sec, lower slowly. Alternate.",
+                 durationSeconds: 90, difficulty: .easy, contraindications: ["knee_injury"]),
+        Exercise(name: "Seated Arm Circles", category: .chair, instructions: "Arms out to sides. Small circles forward 30 sec, backward 30 sec.",
+                 durationSeconds: 60, difficulty: .easy, contraindications: ["shoulder_injury_severe"]),
+        Exercise(name: "Seated Torso Twist", category: .chair, instructions: "Sit sideways on chair. Gently twist right, hold 15 sec. Switch sides.",
+                 durationSeconds: 60, difficulty: .easy, contraindications: ["spine_injury"]),
+        // Breathing
+        Exercise(name: "Box Breathing", category: .breathing, instructions: "Inhale 4 counts, hold 4, exhale 4, hold 4. Repeat. Lowers heart rate and BP.",
+                 durationSeconds: 120, difficulty: .easy, contraindications: []),
+        Exercise(name: "Standing Deep Breaths", category: .breathing, instructions: "Inhale deeply through nose raising arms overhead, exhale slowly lowering arms.",
+                 durationSeconds: 90, difficulty: .easy, contraindications: []),
+    ]
+
+    static func exercise(named name: String) -> Exercise? { allExercises.first { $0.name == name } }
+    static func exercises(in category: ExerciseCategory) -> [Exercise] { allExercises.filter { $0.category == category } }
+
+    static func selectExercises(durationMinutes: Int, enabledCategories: Set<ExerciseCategory>,
+                                disabledExercises: Set<String>, userContraindications: Set<String>) -> [Exercise] {
+        let available = allExercises.filter { ex in
+            enabledCategories.contains(ex.category) &&
+            !disabledExercises.contains(ex.name) &&
+            ex.contraindications.allSatisfy { !userContraindications.contains($0) }
         }
-
         guard !available.isEmpty else {
-            // Fallback: just stand up and move
-            return [marchInPlace, standAndStretchUp]
+            return [exercise(named: "March in Place (Gentle)")!, exercise(named: "Stand & Reach Up")!]
         }
-
-        let targetSeconds = durationMinutes * 60
+        let target = durationMinutes * 60
         var selected: [Exercise] = []
-        var totalSeconds = 0
-        let shuffled = available.shuffled()
-        var usedNames = Set<String>()
-
-        for exercise in shuffled {
-            if totalSeconds + exercise.durationSeconds > targetSeconds + 30 { break }
-            if usedNames.contains(exercise.name) { continue }
-            selected.append(exercise)
-            totalSeconds += exercise.durationSeconds
-            usedNames.insert(exercise.name)
+        var total = 0
+        var seen = Set<String>()
+        for ex in available.shuffled() {
+            if total + ex.durationSeconds > target + 30 { break }
+            if seen.contains(ex.name) { continue }
+            selected.append(ex)
+            total += ex.durationSeconds
+            seen.insert(ex.name)
         }
-
-        if selected.isEmpty {
-            selected = [available.first!]
-        }
-
-        return selected
+        return selected.isEmpty ? [available[0]] : selected
     }
 }

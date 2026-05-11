@@ -19,7 +19,7 @@ swiftc \
   -Xlinker -rpath -Xlinker /usr/lib/swift \
   -target arm64-apple-macosx14.0 \
   -parse-as-library \
-  -O \
+  -Osize \
   -o .build/StandUpReminder \
   Sources/*.swift \
   2>&1 | tee .build/warnings.txt

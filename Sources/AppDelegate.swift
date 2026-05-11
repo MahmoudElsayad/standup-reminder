@@ -28,12 +28,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             }
         }
 
-        Task {
-            await ActivityLogger.shared.setup()
-        }
+        Task { await ActivityLogger.shared.setup() }
+
+        setupNotificationCategories()
+
         reminderEngine = ReminderEngine()
         statusBarController = StatusBarController(reminderEngine: reminderEngine)
-
         reminderEngine.start()
     }
 
@@ -70,5 +70,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         completionHandler([.banner, .sound, .badge])
+    }
+
+    private func setupNotificationCategories() {
+        let completeAction = UNNotificationAction(identifier: "COMPLETE", title: "✅ Done!", options: .foreground)
+        let skipAction = UNNotificationAction(identifier: "SKIP", title: "⏭ Skip", options: .destructive)
+        let snoozeAction = UNNotificationAction(identifier: "SNOOZE", title: "😴 Snooze 5 min", options: [])
+        let category = UNNotificationCategory(
+            identifier: "STANDUP_REMINDER",
+            actions: [completeAction, snoozeAction, skipAction],
+            intentIdentifiers: [], options: [])
+        UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 }

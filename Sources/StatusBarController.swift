@@ -235,3 +235,84 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         updateMenuItems()
     }
 }
+import SwiftUI
+
+struct ActivityLogView: View {
+    @State private var entries: [ActivityLogEntry] = []
+    @State private var streak: Int = 0
+    @State private var completedThisWeek: Int = 0
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 32) {
+                StatItem(value: "\(completedThisWeek)", label: "This Week")
+                StatItem(value: "\(streak)", label: "Day Streak")
+            }
+            .padding()
+            .background(Color.accentColor.opacity(0.1))
+
+            if entries.isEmpty {
+                VStack(spacing: 16) {
+                    Image(systemName: "tray").font(.system(size: 36)).foregroundColor(.secondary)
+                    Text("No activity logged yet").font(.headline).foregroundColor(.secondary)
+                    Text("Complete your first exercise break!").font(.caption).foregroundColor(.secondary)
+                }
+                .frame(maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(entries.sorted(by: { $0.timestamp > $1.timestamp })) { entry in
+                            HStack(spacing: 10) {
+                                Image(systemName: entry.completed ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                    .foregroundColor(entry.completed ? .green : .red).font(.system(size: 14))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(entry.exerciseName).font(.system(size: 13))
+                                    Text(entry.timestamp, style: .date).font(.caption).foregroundColor(.secondary)
+                                    + Text(" at ").font(.caption).foregroundColor(.secondary)
+                                    + Text(entry.timestamp, style: .time).font(.caption).foregroundColor(.secondary)
+                                }
+                                Spacer()
+                            }
+                            .padding(.horizontal).padding(.vertical, 4)
+                            .opacity(entry.completed ? 1.0 : 0.5)
+                            Divider()
+                        }
+                    }
+                }
+            }
+        }
+        .task { await loadData() }
+    }
+
+    private func loadData() async {
+        entries = await ActivityLogger.shared.allEntries()
+        streak = await ActivityLogger.shared.streakDays()
+        completedThisWeek = await ActivityLogger.shared.completedThisWeek()
+    }
+}
+
+struct ContraToggle: View {
+    let label: String
+    let key: String
+    @ObservedObject var engine: ReminderEngine
+    @State private var isOn: Bool = false
+    var body: some View {
+        Toggle(label, isOn: $isOn).font(.caption)
+            .onAppear { isOn = engine.userContraindications.contains(key) }
+            .onChange(of: isOn) { _, new in
+                if new { engine.userContraindications.insert(key) }
+                else { engine.userContraindications.remove(key) }
+            }
+    }
+}
+
+struct StatItem: View {
+    let value: String
+    let label: String
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(value).font(.title2).fontWeight(.bold)
+            Text(label).font(.caption).foregroundColor(.secondary)
+        }
+    }
+}

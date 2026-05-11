@@ -148,30 +148,6 @@ final class ReminderEngine: ObservableObject {
         content.sound = .default
         content.categoryIdentifier = "STANDUP_REMINDER"
 
-        // Add action to mark complete
-        let completeAction = UNNotificationAction(
-            identifier: "COMPLETE",
-            title: "✅ Done!",
-            options: .foreground
-        )
-        let skipAction = UNNotificationAction(
-            identifier: "SKIP",
-            title: "⏭ Skip",
-            options: .destructive
-        )
-        let snoozeAction = UNNotificationAction(
-            identifier: "SNOOZE",
-            title: "😴 Snooze 5 min",
-            options: []
-        )
-        let category = UNNotificationCategory(
-            identifier: "STANDUP_REMINDER",
-            actions: [completeAction, snoozeAction, skipAction],
-            intentIdentifiers: [],
-            options: []
-        )
-        UNUserNotificationCenter.current().setNotificationCategories([category])
-
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
             content: content,
