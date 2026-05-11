@@ -32,7 +32,7 @@ enum ExerciseCategory: String, Codable, CaseIterable {
     }
 }
 
-struct Exercise: Equatable, Hashable {
+struct Exercise: Equatable {
     let name: String
     let category: ExerciseCategory
     let instructions: String
@@ -40,7 +40,7 @@ struct Exercise: Equatable, Hashable {
     let difficulty: Difficulty
     let contraindications: [String]
 
-    enum Difficulty: String, CaseIterable, Hashable {
+    enum Difficulty: String, CaseIterable {
         case easy = "Easy"
         case moderate = "Moderate"
     }
