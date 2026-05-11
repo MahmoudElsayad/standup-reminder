@@ -1,0 +1,237 @@
+import AppKit
+import SwiftUI
+
+@MainActor
+final class StatusBarController: NSObject, NSMenuDelegate {
+    private var statusItem: NSStatusItem!
+    private let reminderEngine: ReminderEngine
+
+    // Menu items needing updates
+    private var nextReminderItem: NSMenuItem!
+    private var exercisesItem: NSMenuItem!
+    private var statsItem: NSMenuItem!
+    private var pauseItem: NSMenuItem!
+
+    init(reminderEngine: ReminderEngine) {
+        self.reminderEngine = reminderEngine
+        super.init()
+        setupStatusItem()
+        setupMenu()
+        observeChanges()
+    }
+
+    private func setupStatusItem() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let button = statusItem.button {
+            button.image = NSImage(
+                systemSymbolName: "figure.strengthtraining.traditional",
+                accessibilityDescription: "StandUp Reminder"
+            )
+            button.image?.isTemplate = true
+        }
+    }
+
+    private func setupMenu() {
+        let menu = NSMenu()
+        menu.delegate = self
+        menu.minimumWidth = 280
+
+        // Stats header
+        statsItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        statsItem.isEnabled = false
+        statsItem.attributedTitle = makeStatsString()
+        menu.addItem(statsItem)
+
+        menu.addItem(.separator())
+
+        // Next reminder
+        nextReminderItem = NSMenuItem(
+            title: "Next: \(reminderEngine.nextReminderText)",
+            action: nil,
+            keyEquivalent: ""
+        )
+        nextReminderItem.isEnabled = false
+        menu.addItem(nextReminderItem)
+
+        // Current exercises
+        exercisesItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        exercisesItem.isEnabled = false
+        updateExercisesItem()
+        menu.addItem(exercisesItem)
+
+        menu.addItem(.separator())
+
+        // Actions
+        let remindNowItem = NSMenuItem(
+            title: "⚠️ Remind Me Now",
+            action: #selector(remindNowClicked),
+            keyEquivalent: "r"
+        )
+        remindNowItem.keyEquivalentModifierMask = [.command, .shift]
+        remindNowItem.target = self
+        menu.addItem(remindNowItem)
+
+        pauseItem = NSMenuItem(
+            title: reminderEngine.isPaused ? "▶ Resume" : "⏸ Pause",
+            action: #selector(togglePauseClicked),
+            keyEquivalent: "p"
+        )
+        pauseItem.keyEquivalentModifierMask = [.command, .shift]
+        pauseItem.target = self
+        menu.addItem(pauseItem)
+
+        let snooze5 = NSMenuItem(
+            title: "😴 Snooze 5 min",
+            action: #selector(snooze5Clicked),
+            keyEquivalent: ""
+        )
+        snooze5.target = self
+        menu.addItem(snooze5)
+
+        let snooze15 = NSMenuItem(
+            title: "😴 Snooze 15 min",
+            action: #selector(snooze15Clicked),
+            keyEquivalent: ""
+        )
+        snooze15.target = self
+        menu.addItem(snooze15)
+
+        menu.addItem(.separator())
+
+        // Log action
+        let logItem = NSMenuItem(
+            title: "📊 View Activity Log",
+            action: #selector(openLogClicked),
+            keyEquivalent: "l"
+        )
+        logItem.keyEquivalentModifierMask = [.command, .shift]
+        logItem.target = self
+        menu.addItem(logItem)
+
+        let settingsItem = NSMenuItem(
+            title: "⚙ Settings",
+            action: #selector(settingsClicked),
+            keyEquivalent: ","
+        )
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+
+        menu.addItem(.separator())
+
+        let quitItem = NSMenuItem(
+            title: "Quit",
+            action: #selector(quitClicked),
+            keyEquivalent: "q"
+        )
+        quitItem.keyEquivalentModifierMask = [.command]
+        quitItem.target = self
+        menu.addItem(quitItem)
+
+        statusItem.menu = menu
+    }
+
+    private func observeChanges() {
+        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.updateMenuItems()
+            }
+        }
+    }
+
+    private func updateMenuItems() {
+        nextReminderItem.title = "Next: \(reminderEngine.nextReminderText)"
+        statsItem.attributedTitle = makeStatsString()
+        pauseItem.title = reminderEngine.isPaused ? "▶ Resume" : "⏸ Pause"
+        updateExercisesItem()
+    }
+
+    private func updateExercisesItem() {
+        let exercises = reminderEngine.selectedExercises
+        if exercises.isEmpty {
+            exercisesItem.title = "No exercises selected"
+            exercisesItem.isHidden = true
+        } else {
+            let names = exercises.map { "  \($0.category.icon) \($0.name)" }.joined(separator: "\n")
+            exercisesItem.title = "Suggested:\n\(names)"
+            exercisesItem.isHidden = false
+        }
+    }
+
+    private func makeStatsString() -> NSAttributedString {
+        // Fetch stats asynchronously
+        var completed = 0
+        var streak = 0
+        let semaphore = DispatchSemaphore(value: 0)
+        Task {
+            completed = await ActivityLogger.shared.completedThisWeek()
+            streak = await ActivityLogger.shared.streakDays()
+            semaphore.signal()
+        }
+        _ = semaphore.wait(timeout: .now() + 0.3)
+
+        let text = "🏃 StandUp Reminder"
+        let detail: String
+        if completed > 0 || streak > 0 {
+            detail = "\(completed) done this week · \(streak)-day streak"
+        } else {
+            detail = "Ready to help you move more!"
+        }
+
+        let attr = NSMutableAttributedString(string: "\(text)\n\(detail)")
+        attr.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: 13), range: NSRange(location: 0, length: text.count))
+        attr.addAttribute(.font, value: NSFont.systemFont(ofSize: 11), range: NSRange(location: text.count + 1, length: detail.count))
+        attr.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: NSRange(location: text.count + 1, length: detail.count))
+        return attr
+    }
+
+    // MARK: - Actions
+
+    @objc private func remindNowClicked() {
+        reminderEngine.triggerNow()
+    }
+
+    @objc private func togglePauseClicked() {
+        reminderEngine.togglePause()
+    }
+
+    @objc private func snooze5Clicked() {
+        reminderEngine.snooze(minutes: 5)
+    }
+
+    @objc private func snooze15Clicked() {
+        reminderEngine.snooze(minutes: 15)
+    }
+
+    @objc private func openLogClicked() {
+        let logView = ActivityLogView()
+        let hostingController = NSHostingController(rootView: logView)
+        let window = NSWindow(contentViewController: hostingController)
+        window.title = "Activity Log — StandUp Reminder"
+        window.setContentSize(NSSize(width: 500, height: 450))
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func settingsClicked() {
+        let settingsView = SettingsView(reminderEngine: reminderEngine)
+        let hostingController = NSHostingController(rootView: settingsView)
+        let window = NSWindow(contentViewController: hostingController)
+        window.title = "StandUp Reminder — Settings"
+        window.setContentSize(NSSize(width: 520, height: 500))
+        window.styleMask = [.titled, .closable, .miniaturizable]
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func quitClicked() {
+        NSApplication.shared.terminate(nil)
+    }
+
+    // NSMenuDelegate
+    func menuWillOpen(_ menu: NSMenu) {
+        updateMenuItems()
+    }
+}

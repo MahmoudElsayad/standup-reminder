@@ -1,0 +1,18 @@
+# Build artifacts
+StandUpReminder.app/
+.build/
+
+# macOS
+.DS_Store
+*.dSYM/
+
+# IDE
+.idea/
+.vscode/
+*.xcodeproj/
+*.xcworkspace/
+
+# Pi agent
+.pi/
+autoresearch.jsonl
+autoresearch.ideas.md
