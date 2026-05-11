@@ -113,6 +113,7 @@ final class ReminderEngine: ObservableObject {
         nextReminderAt = Date().addingTimeInterval(interval)
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
             Task { @MainActor in
+                print("⏰ Timer fired — delivering reminder")
                 self?.deliverReminder()
                 self?.scheduleNext()
             }
@@ -138,12 +139,14 @@ final class ReminderEngine: ObservableObject {
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
             content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+            trigger: nil  // Deliver immediately — timer handles scheduling
         )
 
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("Failed to deliver notification: \(error)")
+                print("❌ Notification delivery failed: \(error)")
+            } else {
+                print("📬 Notification delivered: \(content.title)")
             }
         }
     }

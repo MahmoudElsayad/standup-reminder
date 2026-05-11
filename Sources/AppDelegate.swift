@@ -21,20 +21,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             if let error = error {
                 print("Notification permission error: \(error)")
             }
-            if granted {
-                print("Notification permission granted")
-            } else {
-                print("Notification permission denied — reminders will still show in the menu bar")
+            print("Notification authorization: \(granted ? "granted" : "denied")")
+            print("Bundle ID: \(Bundle.main.bundleIdentifier ?? "nil — running outside .app bundle!")")
+
+            // Register notification categories AFTER authorization
+            DispatchQueue.main.async {
+                self.setupNotificationCategories()
+                // Start timer only after everything is ready
+                self.reminderEngine.start()
             }
         }
 
         Task { await ActivityLogger.shared.setup() }
 
-        setupNotificationCategories()
-
         reminderEngine = ReminderEngine()
         statusBarController = StatusBarController(reminderEngine: reminderEngine)
-        reminderEngine.start()
+        // Timer now starts in authorization callback above
     }
 
     func applicationWillTerminate(_ notification: Notification) {
