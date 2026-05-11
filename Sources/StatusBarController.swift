@@ -235,7 +235,6 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         updateMenuItems()
     }
 }
-import SwiftUI
 
 struct ActivityLogView: View {
     @State private var entries: [ActivityLogEntry] = []
@@ -245,8 +244,14 @@ struct ActivityLogView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 32) {
-                StatItem(value: "\(completedThisWeek)", label: "This Week")
-                StatItem(value: "\(streak)", label: "Day Streak")
+                VStack(spacing: 2) {
+                    Text("\(completedThisWeek)").font(.title2).fontWeight(.bold)
+                    Text("This Week").font(.caption).foregroundColor(.secondary)
+                }
+                VStack(spacing: 2) {
+                    Text("\(streak)").font(.title2).fontWeight(.bold)
+                    Text("Day Streak").font(.caption).foregroundColor(.secondary)
+                }
             }
             .padding()
             .background(Color.accentColor.opacity(0.1))
@@ -288,16 +293,5 @@ struct ActivityLogView: View {
         entries = await ActivityLogger.shared.allEntries()
         streak = await ActivityLogger.shared.streakDays()
         completedThisWeek = await ActivityLogger.shared.completedThisWeek()
-    }
-}
-
-struct StatItem: View {
-    let value: String
-    let label: String
-    var body: some View {
-        VStack(spacing: 2) {
-            Text(value).font(.title2).fontWeight(.bold)
-            Text(label).font(.caption).foregroundColor(.secondary)
-        }
     }
 }

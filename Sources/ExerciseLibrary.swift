@@ -158,9 +158,9 @@ enum ExerciseLibrary {
     static func exercise(named name: String) -> Exercise? { allExercises.first { $0.name == name } }
 
     static func selectExercises(durationMinutes: Int, enabledCategories: Set<ExerciseCategory>,
-                                disabledExercises: Set<String>, userContraindications: Set<String>) -> [Exercise] {
+                                userContraindications: Set<String>) -> [Exercise] {
         let available = allExercises.filter { ex in
-            guard enabledCategories.contains(ex.category), !disabledExercises.contains(ex.name) else { return false }
+            guard enabledCategories.contains(ex.category) else { return false }
             for c in ex.contraindications { if userContraindications.contains(c) { return false } }
             return true
         }

@@ -12,7 +12,6 @@ final class ReminderEngine: ObservableObject {
 
     // Preferences
     @Published var enabledCategories: Set<ExerciseCategory> = Set(ExerciseCategory.allCases)
-    @Published var disabledExercises: Set<String> = []
     @Published var userContraindications: Set<String> = []
     @Published var weeklyGoal: Int = 20
 
@@ -87,7 +86,6 @@ final class ReminderEngine: ObservableObject {
         pendingExercises = ExerciseLibrary.selectExercises(
             durationMinutes: exerciseDurationMinutes,
             enabledCategories: enabledCategories,
-            disabledExercises: disabledExercises,
             userContraindications: userContraindications
         )
         selectedExercises = pendingExercises
