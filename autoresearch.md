@@ -34,4 +34,24 @@ Build a research-backed macOS menu bar app that reminds users to move, with cust
 - Zero warnings
 
 ## What's Been Tried
-(Will be updated as experiments accumulate)
+
+### Optimization Iterations
+1. **Collapse 21 static lets → single array literal** in ExerciseLibrary. Eliminated lazy global initializers. Small compile-time win.
+2. **Merge Models.swift + ExerciseLibrary.swift** → single file. Reduced cross-file type resolution.
+3. **Merge ActivityLogView.swift → StatusBarController.swift**. 8→7→6 files. Minor improvement.
+4. **`-Osize` flag** instead of `-O`. 3.90s → significant for a menu bar app, appropriate tradeoff.
+5. **Revert ExerciseCategory dicts → switch statements**. Dicts add hash conformance overhead; switches compile faster.
+6. **Move notification category setup** from ReminderEngine.deliverReminder (called every reminder) to AppDelegate (called once at launch). Reduces ReminderEngine code size.
+7. **Remove `#Preview` macros** from SettingsView. Dead code removed.
+8. **Simplify ContraToggle** to use @State + onChange instead of Binding closures.
+
+### Results
+- v2.0 (feature complete): 4.13s build, 604KB, 8 files
+- Optimized: 3.39s build (-18.2%), 564KB (-6.6%), 6 files
+- All features preserved. Zero warnings. App runs correctly.
+
+### Ideas for Further Optimization
+- Further consolidate SwiftUI views (SettingsView is 220 lines of generics-heavy DSL)
+- Consider `-wmo` flag to see if whole-module optimization helps
+- Precompile ExerciseLibrary as static data (but would need runtime init)
+- The ReminderEngine @Published overhead is inherent to SwiftUI binding
