@@ -12,6 +12,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     private var statsItem: NSMenuItem!
     private var pauseItem: NSMenuItem!
 
+    // Cached stats updated periodically
+    private var cachedCompleted: Int = 0
+    private var cachedStreak: Int = 0
+
     init(reminderEngine: ReminderEngine) {
         self.reminderEngine = reminderEngine
         super.init()
@@ -136,6 +140,20 @@ final class StatusBarController: NSObject, NSMenuDelegate {
                 self?.updateMenuItems()
             }
         }
+        // Refresh stats every 10 seconds (async — no semaphore needed)
+        Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                cachedCompleted = await ActivityLogger.shared.completedThisWeek()
+                cachedStreak = await ActivityLogger.shared.streakDays()
+            }
+        }
+        // Initial fetch
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            cachedCompleted = await ActivityLogger.shared.completedThisWeek()
+            cachedStreak = await ActivityLogger.shared.streakDays()
+        }
     }
 
     private func updateMenuItems() {
@@ -158,21 +176,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     }
 
     private func makeStatsString() -> NSAttributedString {
-        // Fetch stats asynchronously
-        var completed = 0
-        var streak = 0
-        let semaphore = DispatchSemaphore(value: 0)
-        Task {
-            completed = await ActivityLogger.shared.completedThisWeek()
-            streak = await ActivityLogger.shared.streakDays()
-            semaphore.signal()
-        }
-        _ = semaphore.wait(timeout: .now() + 0.3)
-
         let text = "🏃 StandUp Reminder"
         let detail: String
-        if completed > 0 || streak > 0 {
-            detail = "\(completed) done this week · \(streak)-day streak"
+        if cachedCompleted > 0 || cachedStreak > 0 {
+            detail = "\(cachedCompleted) done this week · \(cachedStreak)-day streak"
         } else {
             detail = "Ready to help you move more!"
         }
