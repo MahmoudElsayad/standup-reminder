@@ -47,11 +47,11 @@ Build a research-backed macOS menu bar app that reminds users to move, with cust
 
 ### Results
 - v2.0 (feature complete): 4.13s build, 604KB, 8 files
-- Optimized: 3.39s build (-18.2%), 564KB (-6.6%), 6 files
+- After -wmo + SettingsView inline + dead code: 2.05s build (-50.4%), 464KB (-23.2%), 6 files
 - All features preserved. Zero warnings. App runs correctly.
 
 ### Ideas for Further Optimization
-- Further consolidate SwiftUI views (SettingsView is 220 lines of generics-heavy DSL)
-- Consider `-wmo` flag to see if whole-module optimization helps
-- Precompile ExerciseLibrary as static data (but would need runtime init)
-- The ReminderEngine @Published overhead is inherent to SwiftUI binding
+- The 22-element Exercise array is the largest remaining code block — could be loaded from JSON at runtime instead of compiled inline
+- ContraToggle could be inlined into SettingsView (currently a separate View struct)
+- ActivityLogView uses @State/ForEach/Identifiable — could be simplified to use List with simpler data flow
+- Consider replacing setNotificationCategories with a simpler approach

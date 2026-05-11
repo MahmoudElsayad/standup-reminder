@@ -291,21 +291,6 @@ struct ActivityLogView: View {
     }
 }
 
-struct ContraToggle: View {
-    let label: String
-    let key: String
-    @ObservedObject var engine: ReminderEngine
-    @State private var isOn: Bool = false
-    var body: some View {
-        Toggle(label, isOn: $isOn).font(.caption)
-            .onAppear { isOn = engine.userContraindications.contains(key) }
-            .onChange(of: isOn) { _, new in
-                if new { engine.userContraindications.insert(key) }
-                else { engine.userContraindications.remove(key) }
-            }
-    }
-}
-
 struct StatItem: View {
     let value: String
     let label: String

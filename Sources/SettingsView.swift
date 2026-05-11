@@ -59,16 +59,9 @@ struct SettingsView: View {
                 Divider().padding(.vertical, 8)
                 Text("I cannot do exercises involving:").font(.headline).padding(.bottom, 4)
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 4) {
-                    ContraToggle(label: "Knee issues", key: "knee_injury", engine: reminderEngine)
-                    ContraToggle(label: "Hip issues", key: "hip_injury", engine: reminderEngine)
-                    ContraToggle(label: "Back issues", key: "back_injury_acute", engine: reminderEngine)
-                    ContraToggle(label: "Shoulder issues", key: "shoulder_injury", engine: reminderEngine)
-                    ContraToggle(label: "Shoulder (severe)", key: "shoulder_injury_severe", engine: reminderEngine)
-                    ContraToggle(label: "Wrist issues", key: "wrist_injury", engine: reminderEngine)
-                    ContraToggle(label: "Ankle issues", key: "ankle_injury", engine: reminderEngine)
-                    ContraToggle(label: "Neck issues", key: "neck_injury", engine: reminderEngine)
-                    ContraToggle(label: "Balance concerns", key: "balance_issues", engine: reminderEngine)
-                    ContraToggle(label: "Hamstring tightness", key: "hamstring_injury", engine: reminderEngine)
+                    ForEach(contraindicationKeys, id: \.key) { item in
+                        Toggle(item.label, isOn: bindContra(item.key)).font(.caption)
+                    }
                 }
                 Text("Selected limitations auto-exclude affected exercises.").font(.caption).foregroundColor(.secondary).padding(.top, 4)
             }
@@ -119,4 +112,22 @@ struct SettingsView: View {
         Binding(get: { reminderEngine.enabledCategories.contains(category) },
                 set: { $0 ? (_ = reminderEngine.enabledCategories.insert(category)) : (_ = reminderEngine.enabledCategories.remove(category)) })
     }
+
+    private func bindContra(_ key: String) -> Binding<Bool> {
+        Binding(get: { reminderEngine.userContraindications.contains(key) },
+                set: { $0 ? (_ = reminderEngine.userContraindications.insert(key)) : (_ = reminderEngine.userContraindications.remove(key)) })
+    }
+
+    private let contraindicationKeys = [
+        (label: "Knee issues", key: "knee_injury"),
+        (label: "Hip issues", key: "hip_injury"),
+        (label: "Back issues", key: "back_injury_acute"),
+        (label: "Shoulder issues", key: "shoulder_injury"),
+        (label: "Shoulder (severe)", key: "shoulder_injury_severe"),
+        (label: "Wrist issues", key: "wrist_injury"),
+        (label: "Ankle issues", key: "ankle_injury"),
+        (label: "Neck issues", key: "neck_injury"),
+        (label: "Balance concerns", key: "balance_issues"),
+        (label: "Hamstring tightness", key: "hamstring_injury"),
+    ]
 }
