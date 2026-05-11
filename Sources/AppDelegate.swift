@@ -18,17 +18,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         UNUserNotificationCenter.current().delegate = self
 
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                print("Notification permission error: \(error)")
-            }
-            print("Notification authorization: \(granted ? "granted" : "denied")")
-            print("Bundle ID: \(Bundle.main.bundleIdentifier ?? "nil — running outside .app bundle!")")
-
-            // Register notification categories AFTER authorization
             DispatchQueue.main.async {
                 self.setupNotificationCategories()
-                // Start timer only after everything is ready
                 self.reminderEngine.start()
+
+                if !granted {
+                    self.showNotificationDeniedAlert()
+                }
             }
         }
 
@@ -36,7 +32,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
         reminderEngine = ReminderEngine()
         statusBarController = StatusBarController(reminderEngine: reminderEngine)
-        // Timer now starts in authorization callback above
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -52,20 +47,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     ) {
         Task { @MainActor in
             switch response.actionIdentifier {
-            case "COMPLETE":
-                reminderEngine.logCompleted()
-            case "SKIP":
-                reminderEngine.logSkipped(reason: "Skipped via notification")
-            case "SNOOZE":
-                reminderEngine.snooze(minutes: 5)
-            default:
-                break
+            case "COMPLETE": reminderEngine.logCompleted()
+            case "SKIP": reminderEngine.logSkipped(reason: "Skipped via notification")
+            case "SNOOZE": reminderEngine.snooze(minutes: 5)
+            default: break
             }
             completionHandler()
         }
     }
 
-    // Show notification even when app is in foreground
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
@@ -73,6 +63,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     ) {
         completionHandler([.banner, .sound, .badge])
     }
+
+    // MARK: - Setup
 
     private func setupNotificationCategories() {
         let completeAction = UNNotificationAction(identifier: "COMPLETE", title: "✅ Done!", options: .foreground)
@@ -83,5 +75,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             actions: [completeAction, snoozeAction, skipAction],
             intentIdentifiers: [], options: [])
         UNUserNotificationCenter.current().setNotificationCategories([category])
+    }
+
+    private func showNotificationDeniedAlert() {
+        let alert = NSAlert()
+        alert.messageText = "Notifications Disabled"
+        alert.informativeText = """
+            StandUp Reminder needs notification permission to send you movement reminders.
+
+            Open System Settings → Notifications → StandUp Reminder
+            and enable "Allow Notifications".
+            """
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Open System Settings")
+        alert.addButton(withTitle: "Later")
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.notifications")!)
+        }
     }
 }
